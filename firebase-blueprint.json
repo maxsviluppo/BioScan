@@ -1,0 +1,37 @@
+{
+  "entities": {
+    "User": {
+      "title": "User Profile",
+      "description": "User account information",
+      "type": "object",
+      "properties": {
+        "email": { "type": "string", "format": "email" },
+        "displayName": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["email", "createdAt"]
+    },
+    "HistoryItem": {
+      "title": "Identification History",
+      "description": "A record of a plant or mineral identification",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "image": { "type": "string", "description": "Base64 encoded image" },
+        "result": { "type": "string", "description": "Markdown result of the analysis" },
+        "timestamp": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "image", "result", "timestamp"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "User profile document"
+    },
+    "/users/{userId}/history/{itemId}": {
+      "schema": "HistoryItem",
+      "description": "User's identification history"
+    }
+  }
+}

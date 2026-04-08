@@ -1,0 +1,5 @@
+{
+  "name": "BioScan Verde",
+  "description": "Un'app per il riconoscimento di piante, alberi, funghi, rocce e terreni con un'estetica naturale e bio.",
+  "requestFramePermissions": ["camera"]
+}

@@ -1,0 +1,46 @@
+@import "tailwindcss";
+
+@layer base {
+  .markdown-body {
+    @apply text-stone-700 dark:text-stone-300 leading-relaxed;
+    overflow-wrap: break-word;
+    word-wrap: break-word;
+    hyphens: none;
+  }
+  .markdown-body h1 {
+    @apply text-xl sm:text-3xl font-black text-stone-900 dark:text-white mb-6 sm:mb-8 mt-2 border-b-2 border-emerald-100 dark:border-emerald-900/50 pb-4 leading-tight tracking-tight;
+    word-break: normal;
+    overflow-wrap: break-word;
+  }
+  .markdown-body h2 {
+    @apply text-lg sm:text-2xl font-bold text-stone-800 dark:text-stone-100 mb-4 sm:mb-6 mt-8 sm:mt-10 leading-snug border-l-4 border-emerald-500 pl-4;
+  }
+  .markdown-body h3 {
+    @apply text-base sm:text-xl font-bold text-emerald-700 dark:text-emerald-400 mb-3 sm:mb-4 mt-8 sm:mt-10 flex items-center gap-2 leading-snug;
+    word-break: normal;
+  }
+  .markdown-body p {
+    @apply mb-4 sm:mb-5 text-[14px] sm:text-lg text-stone-600 dark:text-stone-400 leading-relaxed;
+  }
+  .markdown-body ul, .markdown-body ol {
+    @apply space-y-3 mb-6 sm:mb-8 ml-1;
+  }
+  .markdown-body li {
+    @apply text-[14px] sm:text-lg text-stone-600 dark:text-stone-400 leading-relaxed block;
+  }
+  .markdown-body li strong {
+    @apply text-stone-900 dark:text-stone-100 font-bold mr-1;
+  }
+  .markdown-body strong {
+    @apply font-bold text-stone-900 dark:text-white;
+  }
+  .markdown-body em {
+    @apply text-stone-500 dark:text-stone-500 italic;
+  }
+  .markdown-body blockquote {
+    @apply p-4 sm:p-6 bg-amber-50 dark:bg-amber-900/20 border-l-4 border-amber-400 rounded-r-2xl mb-6 sm:mb-8 italic text-amber-900 dark:text-amber-200 text-[14px] sm:text-lg shadow-sm;
+  }
+  .markdown-body hr {
+    @apply my-8 sm:my-12 border-stone-100 dark:border-stone-800;
+  }
+}
