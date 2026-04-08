@@ -1,5 +1,7 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:where(.dark, .dark *));
+
 @layer base {
   .markdown-body {
     @apply text-stone-700 dark:text-stone-300 leading-relaxed;

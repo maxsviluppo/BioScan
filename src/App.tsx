@@ -24,7 +24,6 @@ import { HistoryView, type HistoryItem } from './components/HistoryView';
 import { Auth } from './components/Auth';
 import { cn } from './lib/utils';
 import { auth, db } from './firebase';
-import { onAuthStateChanged, signOut, User as FirebaseUser } from 'firebase/auth';
 import { 
   collection, 
   addDoc, 
@@ -37,8 +36,11 @@ import {
   getDocs,
   doc
 } from 'firebase/firestore';
+import firebaseConfig from '../firebase-applet-config.json';
+import { onAuthStateChanged, signOut, User as FirebaseUser } from 'firebase/auth';
 
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || '' });
+const GEMINI_KEY = process.env.GEMINI_API_KEY || firebaseConfig.apiKey;
+const ai = new GoogleGenAI({ apiKey: GEMINI_KEY });
 
 export default function App() {
   const [user, setUser] = useState<FirebaseUser | null>(null);
@@ -288,18 +290,13 @@ export default function App() {
     setShowCamera(false);
     setCurrentImage(base64Image);
 
-    if (!process.env.GEMINI_API_KEY) {
-      console.error("GEMINI_API_KEY is missing!");
-      setAnalysisResult("Errore: Chiave API Gemini mancante. Per favore, configurala nelle impostazioni.");
-      setIsAnalyzing(false);
-      return;
-    }
+    let geminiResult = "Identificazione visiva non disponibile (chiave API mancante o errore).";
 
     try {
-      // Step 1: Gemini for Vision (since DeepSeek V3 is text-only)
+      // Step 1: Gemini for Vision
       console.log("Starting Gemini Vision analysis...");
       const geminiResponse = await ai.models.generateContent({
-        model: "gemini-3-flash-preview",
+        model: "gemini-1.5-flash-latest",
         contents: {
           parts: [
             {
@@ -347,10 +344,16 @@ export default function App() {
         }
       });
 
-      const geminiResult = geminiResponse.text || "Spiacente, non sono riuscito a identificare l'elemento.";
-      console.log("Gemini Vision success, enhancing with DeepSeek...");
-      
-      // Step 2: DeepSeek for Deep Enhancement (Reasoning & Detail)
+      geminiResult = geminiResponse.text || geminiResult;
+      console.log("Gemini Vision success or handled partial failure.");
+    } catch (geminiError) {
+      console.warn("Gemini Vision failed, falling back to basic result:", geminiError);
+      // We don't throw here, we continue with the default geminiResult to DeepSeek
+    }
+
+    try {
+      // Step 2: DeepSeek for Deep Enhancement
+      console.log("Enhancing with DeepSeek...");
       const deepseekResponse = await fetchWithTimeout('/api/deepseek/enhance', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -363,13 +366,10 @@ export default function App() {
       setAnalysisResult(resultText);
       await saveToHistory(resultText, base64Image);
     } catch (error) {
-      console.error("Analysis error:", error);
-      const errorMessage = error instanceof Error ? error.message : String(error);
-      if (errorMessage.includes('Load failed') || errorMessage.includes('Failed to fetch')) {
-        setAnalysisResult("Errore di connessione: Assicurati di essere online e riprova.");
-      } else {
-        setAnalysisResult("Si è verificato un errore durante l'analisi. Per favore, riprova.");
-      }
+      console.error("DeepSeek Enhancement error:", error);
+      // Fallback to gemini result if DeepSeek fails
+      setAnalysisResult(geminiResult);
+      await saveToHistory(geminiResult, base64Image);
     } finally {
       setIsAnalyzing(false);
     }
