@@ -44,35 +44,32 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ onClose }) => {
               <span>Gemini API Key</span>
             </div>
             
-            <p className="text-sm text-text-secondary dark:text-stone-400 leading-relaxed font-medium mb-6">
-              L'applicazione utilizza il modello Gemini di Google per l'identificazione. Per configurare o aggiornare la tua chiave:
-            </p>
-
             <div className="space-y-4">
+              <div className="flex flex-col gap-2">
+                <label className="text-[9px] font-black uppercase text-accent tracking-widest ml-1">Inserisci Chiave Manualmente</label>
+                <input 
+                  type="password"
+                  placeholder="Incolla qui la tua API Key..."
+                  defaultValue={typeof window !== 'undefined' ? localStorage.getItem('CUSTOM_GEMINI_KEY') || '' : ''}
+                  onChange={(e) => {
+                    localStorage.setItem('CUSTOM_GEMINI_KEY', e.target.value);
+                  }}
+                  className="w-full bg-white border border-gray-100 rounded-2xl px-4 py-4 text-sm font-bold focus:ring-2 focus:ring-accent outline-none shadow-inner"
+                />
+              </div>
+              
+              <div className="relative py-4 flex items-center">
+                <div className="flex-grow border-t border-gray-100"></div>
+                <span className="flex-shrink mx-4 text-[8px] font-black text-gray-300 uppercase tracking-widest">Oppure segui la guida</span>
+                <div className="flex-grow border-t border-gray-100"></div>
+              </div>
+
               <div className="flex items-start gap-3">
                 <div className="w-6 h-6 bg-accent/20 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
                   <span className="text-[10px] font-black text-accent">1</span>
                 </div>
                 <p className="text-xs text-text-primary dark:text-stone-300 font-bold">
-                  Apri il menu <span className="text-accent italic">Settings</span> di AI Studio Build.
-                </p>
-              </div>
-              
-              <div className="flex items-start gap-3">
-                <div className="w-6 h-6 bg-accent/20 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-                  <span className="text-[10px] font-black text-accent">2</span>
-                </div>
-                <p className="text-xs text-text-primary dark:text-stone-300 font-bold">
-                  Aggiungi una variabile chiamata <code className="bg-accent/10 px-1.5 py-0.5 rounded text-accent">GEMINI_API_KEY</code>.
-                </p>
-              </div>
-
-              <div className="flex items-start gap-3">
-                <div className="w-6 h-6 bg-accent/20 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-                  <span className="text-[10px] font-black text-accent">3</span>
-                </div>
-                <p className="text-xs text-text-primary dark:text-stone-300 font-bold">
-                  Incolla la tua chiave API ottenuta da Google AI Studio.
+                  Crea una variabile <code className="bg-accent/10 px-1.5 py-0.5 rounded text-accent">GEMINI_API_KEY</code> su Vercel.
                 </p>
               </div>
             </div>

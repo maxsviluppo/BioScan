@@ -58,7 +58,9 @@ export default function App() {
   });
   const [showSettings, setShowSettings] = useState(false);
 
-  const aiClient = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || '' });
+  const aiClient = new GoogleGenAI({ 
+    apiKey: (typeof window !== 'undefined' ? localStorage.getItem('CUSTOM_GEMINI_KEY') : '') || process.env.GEMINI_API_KEY || '' 
+  });
 
   // Dark mode effect
   useEffect(() => {
@@ -148,143 +150,63 @@ export default function App() {
     }
   };
 
-  const fetchWithTimeout = async (url: string, options: any = {}, timeout = 60000) => {
-    const controller = new AbortController();
-    const id = setTimeout(() => controller.abort(), timeout);
-    try {
-      const response = await fetch(url, {
-        ...options,
-        signal: controller.signal
-      });
-      clearTimeout(id);
-      return response;
-    } catch (error) {
-      clearTimeout(id);
-      console.error(`Fetch error for ${url}:`, error);
-      throw error;
-    }
-  };
-
   const handleSearch = async (e: React.KeyboardEvent<HTMLInputElement>) => {
       if (e.key === 'Enter' && searchQuery.trim()) {
       setIsAnalyzing(true);
       setCurrentImage("https://images.unsplash.com/photo-1518531933037-91b2f5f229cc?auto=format&fit=crop&q=80&w=200");
       try {
-        console.log("Starting search for:", searchQuery);
-        const response = await fetchWithTimeout('/api/deepseek/search', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ query: searchQuery })
-        });
-        const data = await response.json();
+        console.log("Starting search with Gemini 2.0 Flash for:", searchQuery);
         
-        if (data.fallback || !data.text) {
-          console.log("DeepSeek fallback or empty text, using Gemini...");
-          
-          if (!process.env.GEMINI_API_KEY) {
-            console.error("GEMINI_API_KEY is missing for fallback!");
-            setAnalysisResult("Errore: DeepSeek non disponibile e chiave API Gemini mancante.");
-            setIsAnalyzing(false);
-            return;
-          }
+        if (!process.env.GEMINI_API_KEY) {
+          throw new Error("GEMINI_API_KEY is missing");
+        }
 
-          // Use latest Gemini Pro for text analysis
-          const geminiResponse = await aiClient.models.generateContent({
-            model: "gemini-3.1-pro-preview",
-            contents: `Sei un esperto naturalista e geologo. Fornisci una scheda tecnica per l'elemento naturale: "${searchQuery}". 
-            
-            Usa SEMPRE questo formato Markdown pulito:
-            # [CLASSE] Oggetto diagnosticato
-            
-            ### 1. Identificazione
-            **Nome comune:** [Nome]
-            **Nome scientifico:** *[Nome Scientifico]*
-            
-            ### 2. Caratteristiche Visive
-            [Descrizione dettagliata in paragrafi]
-            
-            ### 3. Varianti e Stadi Vitali
-            [Descrizione]
-            
-            ### 4. Stato di Salute
-            **Diagnosi:** [Stato]
-            [Dettagli]
-            
-            ### 5. Diagnosi Differenziale
-            [Dettagli]
-            
-            ### 6. Cure e Trattamenti
-            *   **Biologiche:** [Consigli]
-            *   **Chimiche:** [Consigli]
-            *   **Meccaniche:** [Consigli]
-            *   **Culturali:** [Consigli]
-            
-            Rispondi in italiano in formato markdown.`
-          });
-          setAnalysisResult(geminiResponse.text || "Nessun risultato trovato.");
-          if (geminiResponse.text) await saveToHistory(geminiResponse.text);
-        } else {
-          setAnalysisResult(data.text);
-          await saveToHistory(data.text);
-        }
+        const geminiResponse = await aiClient.models.generateContent({
+          model: "gemini-1.5-flash",
+          contents: `Sei un esperto naturalista e geologo. Fornisci una scheda tecnica dettagliata per l'elemento naturale: "${searchQuery}". 
+          
+          Usa SEMPRE questo formato Markdown pulito:
+          # [CLASSE] Oggetto diagnosticato
+          
+          ### 1. Identificazione
+          **Nome comune:** [Nome]
+          **Nome scientifico:** *[Nome Scientifico]*
+          
+          ### 2. Caratteristiche Visive
+          [Descrizione dettagliata in paragrafi]
+          
+          ### 3. Varianti e Stadi Vitali
+          [Descrizione]
+          
+          ### 4. Stato di Salute
+          **Diagnosi:** [Stato]
+          [Dettagli]
+          
+          ### 5. Diagnosi Differenziale
+          [Dettagli]
+          
+          ### 6. Cure e Trattamenti
+          *   **Biologiche:** [Consigli]
+          *   **Chimiche:** [Consigli]
+          *   **Meccaniche:** [Consigli]
+          *   **Culturali:** [Consigli]
+          
+          Rispondi in italiano in formato markdown.`
+        });
+
+        const resultText = geminiResponse.text || "Nessun risultato trovato.";
+        setAnalysisResult(resultText);
+        await saveToHistory(resultText);
       } catch (error) {
-        console.error("DeepSeek Search error, falling back to Gemini:", error);
-        const errorMessage = error instanceof Error ? error.message : String(error);
-        
-        try {
-          if (!process.env.GEMINI_API_KEY) {
-            throw new Error("GEMINI_API_KEY is missing");
-          }
-          const geminiResponse = await aiClient.models.generateContent({
-            model: "gemini-3.1-pro-preview",
-            contents: `Sei un esperto naturalista e geologo. Fornisci una scheda tecnica per l'elemento naturale: "${searchQuery}". 
-            
-            Usa SEMPRE questo formato Markdown pulito:
-            # [CLASSE] Oggetto diagnosticato
-            
-            ### 1. Identificazione
-            **Nome comune:** [Nome]
-            **Nome scientifico:** *[Nome Scientifico]*
-            
-            ### 2. Caratteristiche Visive
-            [Descrizione dettagliata in paragrafi]
-            
-            ### 3. Varianti e Stadi Vitali
-            [Descrizione]
-            
-            ### 4. Stato di Salute
-            **Diagnosi:** [Stato]
-            [Dettagli]
-            
-            ### 5. Diagnosi Differenziale
-            [Dettagli]
-            
-            ### 6. Cure e Trattamenti
-            *   **Biologiche:** [Consigli]
-            *   **Chimiche:** [Consigli]
-            *   **Meccaniche:** [Consigli]
-            *   **Culturali:** [Consigli]
-            
-            Rispondi in italiano in formato markdown.`
-          });
-          const geminiResult = geminiResponse.text || "Errore durante la ricerca.";
-          setAnalysisResult(geminiResult);
-          if (geminiResponse.text) await saveToHistory(geminiResult);
-        } catch (geminiError) {
-          console.error("Gemini fallback error:", geminiError);
-          if (errorMessage.includes('Load failed') || errorMessage.includes('Failed to fetch')) {
-            setAnalysisResult("Errore di connessione: Assicurati di essere online e riprova.");
-          } else {
-            setAnalysisResult("Si è verificato un errore durante la ricerca. Per favore, riprova.");
-          }
-        }
+        console.error("Gemini Search error:", error);
+        setAnalysisResult("Si è verificato un errore durante la ricerca. Per favore, riprova.");
       } finally {
         setIsAnalyzing(false);
         setSearchQuery('');
       }
     }
-
   };
+
 
   const handleCapture = useCallback(async (base64Image: string) => {
     setIsAnalyzing(true);
@@ -299,10 +221,9 @@ export default function App() {
     }
 
     try {
-      // Step 1: Gemini for Vision (using the latest Flash model for speed)
-      console.log("Starting Gemini Vision analysis...");
+      console.log("Starting Gemini 1.5 Flash Vision analysis...");
       const geminiResponse = await aiClient.models.generateContent({
-        model: "gemini-3-flash-preview",
+        model: "gemini-1.5-flash",
         contents: {
           parts: [
             {
@@ -350,46 +271,7 @@ export default function App() {
         }
       });
 
-      const geminiResult = geminiResponse.text || "Spiacente, non sono riuscito a identificare l'elemento.";
-      console.log("Gemini Vision success, enhancing with Gemini 3.1 Pro...");
-      
-      // Step 2: Use Gemini 3.1 Pro for Deep Enhancement (Reasoning & Detail) instead of external APIs
-      const enhancedResponse = await aiClient.models.generateContent({
-        model: "gemini-3.1-pro-preview",
-        contents: `Sei un esperto naturalista. Trasforma i dati di identificazione in una scheda professionale e ordinata seguendo rigorosamente lo schema.
-        
-        Dati identificazione: ${geminiResult}
-        
-        Usa SEMPRE questo formato Markdown pulito:
-        # [CLASSE] Oggetto diagnosticato
-        
-        ### 1. Identificazione
-        **Nome comune:** [Nome]
-        **Nome scientifico:** *[Nome Scientifico]*
-        
-        ### 2. Caratteristiche Visive
-        [Descrizione]
-        
-        ### 3. Varianti e Stadi Vitali
-        [Descrizione]
-        
-        ### 4. Stato di Salute
-        **Diagnosi:** [Stato]
-        [Dettagli]
-        
-        ### 5. Diagnosi Differenziale
-        [Dettagli]
-        
-        ### 6. Cure e Trattamenti
-        *   **Biologiche:** [Consigli]
-        *   **Chimiche:** [Consigli]
-        *   **Meccaniche:** [Consigli]
-        *   **Culturali:** [Consigli]
-        
-        REGOLE: In italiano, professionale, box avviso se pericoloso.`
-      });
-
-      const resultText = enhancedResponse.text || geminiResult;
+      const resultText = geminiResponse.text || "Spiacente, non sono riuscito a identificare l'elemento.";
       console.log("Analysis complete.");
       setAnalysisResult(resultText);
       await saveToHistory(resultText, base64Image);
