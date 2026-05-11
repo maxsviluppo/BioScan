@@ -28,58 +28,59 @@ export const HistoryView: React.FC<HistoryViewProps> = ({
       initial={{ opacity: 0, x: -20 }}
       animate={{ opacity: 1, x: 0 }}
       exit={{ opacity: 0, x: -20 }}
-      className="fixed inset-0 z-40 bg-[#FDFCF8] dark:bg-stone-950 pt-24 px-6 pb-32 overflow-y-auto"
+      className="fixed inset-0 z-40 pt-32 px-6 pb-32 overflow-y-auto"
+      style={{ background: 'linear-gradient(135deg, var(--color-bg-start) 0%, var(--color-bg-end) 100%)' }}
     >
       <div className="max-w-md mx-auto">
-        <div className="flex items-center justify-between mb-8">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-emerald-100 dark:bg-emerald-900/30 rounded-xl flex items-center justify-center">
-              <History className="text-emerald-600" size={24} />
+        <div className="flex items-center justify-between mb-10">
+          <div className="flex items-center gap-4">
+            <div className="w-14 h-14 bg-white/50 backdrop-blur-md rounded-2xl flex items-center justify-center shadow-soft border border-white">
+              <History className="text-accent" size={28} />
             </div>
-            <h2 className="text-3xl font-bold text-stone-900 dark:text-white">Cronologia</h2>
+            <h2 className="text-4xl font-black text-text-primary dark:text-white font-display uppercase tracking-widest italic">Storia<span className="text-accent">.</span></h2>
           </div>
           <button 
             onClick={onClose} 
-            className="text-emerald-600 font-semibold hover:bg-emerald-50 dark:hover:bg-emerald-900/20 px-3 py-1 rounded-lg transition-colors"
+            className="text-text-secondary font-black uppercase tracking-widest text-[10px] px-6 py-3 bg-white/50 border border-white rounded-full hover:bg-accent hover:text-white transition-all shadow-sm"
           >
             Chiudi
           </button>
         </div>
 
         {history.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-20 text-center space-y-4">
-            <div className="w-20 h-20 bg-stone-100 dark:bg-stone-900 rounded-full flex items-center justify-center text-stone-300 dark:text-stone-700">
-              <History size={40} />
+          <div className="flex flex-col items-center justify-center py-24 text-center space-y-6 bg-white/60 backdrop-blur-md dark:bg-stone-900 rounded-[48px] border border-white shadow-soft px-10">
+            <div className="w-24 h-24 bg-bg-start dark:bg-stone-800 rounded-full flex items-center justify-center text-accent/30">
+              <History size={48} />
             </div>
             <div>
-              <h3 className="text-xl font-bold text-stone-800 dark:text-stone-200">Nessuna scansione</h3>
-              <p className="text-stone-500 dark:text-stone-500">Le tue identificazioni appariranno qui.</p>
+              <h3 className="text-2xl font-black text-text-primary dark:text-stone-200 font-display uppercase tracking-widest leading-none mb-3">Silent Garden</h3>
+              <p className="text-text-secondary dark:text-stone-500 font-bold text-xs uppercase tracking-widest">Le tue scoperte appariranno qui.</p>
             </div>
           </div>
         ) : (
           <>
-            <div className="space-y-4">
+            <div className="space-y-6">
               {history.map((item) => (
                 <motion.div 
                   key={item.id}
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   onClick={() => onSelectItem(item)}
-                  className="bg-white dark:bg-stone-900 p-4 rounded-3xl border border-stone-100 dark:border-stone-800 shadow-sm flex gap-4 group cursor-pointer hover:shadow-md transition-all active:scale-[0.98]"
+                  className="bg-white/70 backdrop-blur-md dark:bg-stone-900 p-5 rounded-[40px] border border-white dark:border-stone-800 shadow-soft flex gap-5 group cursor-pointer lg:hover:scale-[1.02] transition-all active:scale-[0.98] relative overflow-hidden"
                 >
-                  <div className="w-20 h-20 rounded-2xl overflow-hidden flex-shrink-0 bg-stone-100 dark:bg-stone-800">
+                  <div className="w-24 h-24 rounded-[32px] overflow-hidden flex-shrink-0 bg-bg-start dark:bg-stone-800 border-[6px] border-white dark:border-stone-800 shadow-sm">
                     <img 
                       src={item.image.startsWith('http') ? item.image : `data:image/jpeg;base64,${item.image}`} 
                       alt="Scan preview" 
-                      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" 
+                      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-1000" 
                       loading="lazy"
                       decoding="async"
                     />
                   </div>
                   <div className="flex-1 py-1 min-w-0">
-                    <div className="flex items-center gap-1.5 text-stone-400 dark:text-stone-500 mb-1">
-                      <Calendar size={12} />
-                      <span className="text-[10px] font-medium uppercase tracking-wider">
+                    <div className="flex items-center gap-2 text-accent mb-2">
+                      <Calendar size={14} />
+                      <span className="text-[10px] font-black uppercase tracking-[0.2em]">
                         {item.date.toLocaleDateString('it-IT', { 
                           day: 'numeric', 
                           month: 'short', 
@@ -88,15 +89,15 @@ export const HistoryView: React.FC<HistoryViewProps> = ({
                         })}
                       </span>
                     </div>
-                    <h3 className="font-bold text-stone-800 dark:text-stone-100 truncate pr-4">
+                    <h3 className="font-extrabold text-text-primary dark:text-stone-100 truncate pr-6 font-display text-lg uppercase tracking-tight">
                       {item.result.split('\n')[0].replace(/#/g, '').trim() || 'Identificazione'}
                     </h3>
-                    <p className="text-xs text-stone-500 dark:text-stone-400 line-clamp-1">
+                    <p className="text-xs text-text-secondary dark:text-stone-400 line-clamp-1 font-bold italic">
                       {item.result.split('\n').slice(1).join(' ').replace(/[*#]/g, '').trim()}
                     </p>
                   </div>
-                  <div className="flex items-center">
-                    <ChevronRight size={20} className="text-stone-300 dark:text-stone-700 group-hover:text-emerald-500 transition-colors" />
+                  <div className="flex items-center px-1">
+                    <ChevronRight size={24} className="text-accent/30 group-hover:text-accent group-hover:translate-x-1 transition-all" />
                   </div>
                 </motion.div>
               ))}
@@ -104,9 +105,9 @@ export const HistoryView: React.FC<HistoryViewProps> = ({
 
             <button 
               onClick={onClearHistory}
-              className="w-full mt-8 py-4 flex items-center justify-center gap-2 text-rose-500 font-bold hover:bg-rose-50 dark:hover:bg-rose-900/20 rounded-2xl transition-colors"
+              className="w-full mt-16 py-6 flex items-center justify-center gap-3 text-rose-500 font-black uppercase tracking-[0.3em] text-[10px] bg-rose-500/5 hover:bg-rose-500 hover:text-white rounded-full border border-rose-500/20 transition-all shadow-sm"
             >
-              <Trash2 size={18} />
+              <Trash2 size={16} />
               Svuota Cronologia
             </button>
           </>

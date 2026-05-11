@@ -2,24 +2,26 @@
   "entities": {
     "User": {
       "title": "User Profile",
-      "description": "User account information",
+      "description": "User account information and roles",
       "type": "object",
       "properties": {
-        "email": { "type": "string", "format": "email" },
-        "displayName": { "type": "string" },
-        "createdAt": { "type": "string", "format": "date-time" }
+        "email": { "type": "string", "format": "email", "description": "Verified email address" },
+        "displayName": { "type": "string", "description": "User's full name" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "ISO timestamp of account creation" },
+        "photoURL": { "type": "string", "description": "User's profile photo URL" }
       },
       "required": ["email", "createdAt"]
     },
     "HistoryItem": {
       "title": "Identification History",
-      "description": "A record of a plant or mineral identification",
+      "description": "A record of a biological or geological identification",
       "type": "object",
       "properties": {
-        "userId": { "type": "string" },
-        "image": { "type": "string", "description": "Base64 encoded image" },
-        "result": { "type": "string", "description": "Markdown result of the analysis" },
-        "timestamp": { "type": "string", "format": "date-time" }
+        "userId": { "type": "string", "description": "UID of the owner" },
+        "image": { "type": "string", "description": "Base64 encoded image or URL" },
+        "result": { "type": "string", "description": "Markdown text of the analysis result" },
+        "timestamp": { "type": "string", "format": "date-time", "description": "Server-side creation timestamp" },
+        "type": { "type": "string", "enum": ["identification", "search"], "description": "Type of operation" }
       },
       "required": ["userId", "image", "result", "timestamp"]
     }
@@ -27,11 +29,11 @@
   "firestore": {
     "/users/{userId}": {
       "schema": "User",
-      "description": "User profile document"
+      "description": "Root user profile document"
     },
     "/users/{userId}/history/{itemId}": {
       "schema": "HistoryItem",
-      "description": "User's identification history"
+      "description": "Chronological history of identifications and searches"
     }
   }
 }

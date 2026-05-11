@@ -1,48 +1,70 @@
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap');
 @import "tailwindcss";
 
-@custom-variant dark (&:where(.dark, .dark *));
+@theme {
+  --font-sans: "Montserrat", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Montserrat", sans-serif;
+  
+  --color-accent: #444C2E;
+  --color-bg-start: #F0F4F8;
+  --color-bg-end: #E2EAF1;
+  --color-text-primary: #1A1C22;
+  --color-text-secondary: #7D848F;
+  --color-glass: rgba(255, 255, 255, 0.9);
+
+  --shadow-soft: 20px 20px 60px #d1d9e6, -20px -20px 60px #ffffff;
+}
 
 @layer base {
+  body {
+    @apply font-sans text-text-primary selection:bg-accent/30 min-h-screen transition-colors duration-300;
+    background: linear-gradient(135deg, #E2E8F0 0%, #CBD5E1 100%);
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-display tracking-tight;
+  }
+
   .markdown-body {
-    @apply text-stone-700 dark:text-stone-300 leading-relaxed;
+    @apply text-text-secondary dark:text-stone-300 leading-relaxed font-sans;
     overflow-wrap: break-word;
     word-wrap: break-word;
     hyphens: none;
   }
   .markdown-body h1 {
-    @apply text-xl sm:text-3xl font-black text-stone-900 dark:text-white mb-6 sm:mb-8 mt-2 border-b-2 border-emerald-100 dark:border-emerald-900/50 pb-4 leading-tight tracking-tight;
+    @apply text-xl sm:text-3xl font-black text-text-primary dark:text-white mb-6 sm:mb-8 mt-2 border-b-2 border-accent/20 dark:border-emerald-900/50 pb-4 leading-tight tracking-tight font-display;
     word-break: normal;
     overflow-wrap: break-word;
   }
   .markdown-body h2 {
-    @apply text-lg sm:text-2xl font-bold text-stone-800 dark:text-stone-100 mb-4 sm:mb-6 mt-8 sm:mt-10 leading-snug border-l-4 border-emerald-500 pl-4;
+    @apply text-lg sm:text-2xl font-bold text-text-primary dark:text-stone-100 mb-4 sm:mb-6 mt-8 sm:mt-10 leading-snug border-l-4 border-accent pl-4 font-display;
   }
   .markdown-body h3 {
-    @apply text-base sm:text-xl font-bold text-emerald-700 dark:text-emerald-400 mb-3 sm:mb-4 mt-8 sm:mt-10 flex items-center gap-2 leading-snug;
+    @apply text-base sm:text-xl font-bold text-accent dark:text-accent mb-3 sm:mb-4 mt-8 sm:mt-10 flex items-center gap-2 leading-snug font-display;
     word-break: normal;
   }
   .markdown-body p {
-    @apply mb-4 sm:mb-5 text-[14px] sm:text-lg text-stone-600 dark:text-stone-400 leading-relaxed;
+    @apply mb-4 sm:mb-5 text-[14px] sm:text-lg text-text-secondary dark:text-stone-400 leading-relaxed;
   }
   .markdown-body ul, .markdown-body ol {
     @apply space-y-3 mb-6 sm:mb-8 ml-1;
   }
   .markdown-body li {
-    @apply text-[14px] sm:text-lg text-stone-600 dark:text-stone-400 leading-relaxed block;
+    @apply text-[14px] sm:text-lg text-text-secondary dark:text-stone-400 leading-relaxed block;
   }
   .markdown-body li strong {
-    @apply text-stone-900 dark:text-stone-100 font-bold mr-1;
+    @apply text-text-primary dark:text-stone-100 font-bold mr-1;
   }
   .markdown-body strong {
-    @apply font-bold text-stone-900 dark:text-white;
+    @apply font-bold text-text-primary dark:text-white;
   }
   .markdown-body em {
     @apply text-stone-500 dark:text-stone-500 italic;
   }
   .markdown-body blockquote {
-    @apply p-4 sm:p-6 bg-amber-50 dark:bg-amber-900/20 border-l-4 border-amber-400 rounded-r-2xl mb-6 sm:mb-8 italic text-amber-900 dark:text-amber-200 text-[14px] sm:text-lg shadow-sm;
+    @apply p-4 sm:p-6 bg-accent/5 dark:bg-accent/10 border-l-4 border-accent rounded-r-2xl mb-6 sm:mb-8 italic text-text-secondary dark:text-accent text-[14px] sm:text-lg shadow-sm;
   }
   .markdown-body hr {
-    @apply my-8 sm:my-12 border-stone-100 dark:border-stone-800;
+    @apply my-8 sm:my-12 border-accent/10 dark:border-stone-800;
   }
 }

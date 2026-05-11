@@ -33,9 +33,9 @@ export const Camera: React.FC<CameraProps> = ({ onCapture, onClose }) => {
     try {
       const constraints: any = {
         video: { 
-          facingMode: 'environment',
-          width: { ideal: 1920 },
-          height: { ideal: 1080 }
+          facingMode: { ideal: 'environment' },
+          width: { ideal: 1920, max: 3840 },
+          height: { ideal: 1080, max: 2160 }
         },
         audio: false,
       };
@@ -222,7 +222,10 @@ export const Camera: React.FC<CameraProps> = ({ onCapture, onClose }) => {
       onTouchEnd={handleTouchEnd}
     >
       <button
-        onClick={onClose}
+        onClick={() => {
+          stopCamera();
+          onClose();
+        }}
         className="absolute top-6 right-6 p-2 bg-white/10 rounded-full text-white hover:bg-white/20 transition-colors z-50"
       >
         <X size={24} />
@@ -257,6 +260,7 @@ export const Camera: React.FC<CameraProps> = ({ onCapture, onClose }) => {
             ref={videoRef}
             autoPlay
             playsInline
+            muted
             className="w-full h-full object-cover"
           />
           

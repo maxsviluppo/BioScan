@@ -1,39 +1,62 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Helper functions
-    function isAuthenticated() {
-      return request.auth != null;
-    }
-    
-    function isOwner(userId) {
-      return isAuthenticated() && request.auth.uid == userId;
+    // 0. Global Safety Net
+    match /{document=**} {
+      allow read, write: if false;
     }
 
+    // Phase 3: Primitives & Helpers
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    // Pillar 2: Validation Blueprints
     function isValidUser(data) {
       return data.keys().hasAll(['email', 'createdAt']) &&
-             data.email is string &&
-             data.createdAt is string;
+             data.keys().size() >= 2 &&
+             data.email is string && data.email.size() <= 256 &&
+             data.createdAt is timestamp;
     }
 
     function isValidHistoryItem(data) {
       return data.keys().hasAll(['userId', 'image', 'result', 'timestamp']) &&
+             data.keys().size() >= 4 &&
              data.userId == request.auth.uid &&
-             data.image is string &&
-             data.result is string &&
-             (data.timestamp is timestamp || data.timestamp is string);
+             data.image is string && data.image.size() <= 2000000 && // 2MB limit for base64
+             data.result is string && data.result.size() <= 50000 &&
+             data.timestamp == request.time;
     }
 
     // User profiles
     match /users/{userId} {
-      allow read: if isOwner(userId);
-      allow create: if isOwner(userId) && isValidUser(request.resource.data);
-      allow update: if isOwner(userId) && isValidUser(request.resource.data);
+      allow get: if isOwner(userId);
+      allow create: if isOwner(userId) && isValidUser(incoming());
+      allow update: if isOwner(userId) && isValidUser(incoming()) && (
+        incoming().diff(existing()).affectedKeys().hasOnly(['displayName', 'photoURL'])
+      );
       
       // History subcollection
       match /history/{itemId} {
-        allow read: if isOwner(userId);
-        allow create: if isOwner(userId) && isValidHistoryItem(request.resource.data);
+        allow list: if isOwner(userId);
+        allow get: if isOwner(userId);
+        allow create: if isOwner(userId) && isValidId(itemId) && isValidHistoryItem(incoming());
         allow delete: if isOwner(userId);
       }
     }

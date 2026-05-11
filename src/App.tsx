@@ -3,9 +3,6 @@ import { motion, AnimatePresence } from 'motion/react';
 import { 
   Camera as CameraIcon, 
   Leaf, 
-  Mountain, 
-  TreePine, 
-  Wind, 
   Search, 
   History,
   Info,
@@ -13,6 +10,7 @@ import {
   Loader2,
   LogOut,
   User,
+  Settings,
   Sun,
   Moon
 } from 'lucide-react';
@@ -21,9 +19,11 @@ import { Camera } from './components/Camera';
 import { IdentificationResult } from './components/IdentificationResult';
 import { LibraryView } from './components/LibraryView';
 import { HistoryView, type HistoryItem } from './components/HistoryView';
+import { SettingsView } from './components/SettingsView';
 import { Auth } from './components/Auth';
 import { cn } from './lib/utils';
-import { auth, db } from './firebase';
+import { auth, db, handleFirestoreError, OperationType } from './firebase';
+import { onAuthStateChanged, signOut, User as FirebaseUser } from 'firebase/auth';
 import { 
   collection, 
   addDoc, 
@@ -36,11 +36,7 @@ import {
   getDocs,
   doc
 } from 'firebase/firestore';
-import firebaseConfig from '../firebase-applet-config.json';
-import { onAuthStateChanged, signOut, User as FirebaseUser } from 'firebase/auth';
 
-const GEMINI_KEY = process.env.GEMINI_API_KEY || firebaseConfig.apiKey;
-const ai = new GoogleGenAI({ apiKey: GEMINI_KEY });
 
 export default function App() {
   const [user, setUser] = useState<FirebaseUser | null>(null);
@@ -60,6 +56,9 @@ export default function App() {
     }
     return false;
   });
+  const [showSettings, setShowSettings] = useState(false);
+
+  const aiClient = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || '' });
 
   // Dark mode effect
   useEffect(() => {
@@ -112,7 +111,7 @@ export default function App() {
       });
       setHistory(items);
     }, (error) => {
-      console.error("Firestore error:", error);
+      handleFirestoreError(error, OperationType.LIST, `users/${user.uid}/history`);
     });
 
     return () => unsubscribe();
@@ -128,15 +127,17 @@ export default function App() {
     if (!user || !resultText) return;
     
     setHasNewResult(true);
+    const path = `users/${user.uid}/history`;
     try {
-      await addDoc(collection(db, 'users', user.uid, 'history'), {
+      await addDoc(collection(db, path), {
         userId: user.uid,
         image: image || "https://images.unsplash.com/photo-1518531933037-91b2f5f229cc?auto=format&fit=crop&q=80&w=200",
         result: resultText,
-        timestamp: serverTimestamp()
+        timestamp: serverTimestamp(),
+        type: image ? 'identification' : 'search'
       });
     } catch (err) {
-      console.error("Error saving to Firestore:", err);
+      handleFirestoreError(err, OperationType.CREATE, path);
     }
   };
 
@@ -165,7 +166,7 @@ export default function App() {
   };
 
   const handleSearch = async (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter' && searchQuery.trim()) {
+      if (e.key === 'Enter' && searchQuery.trim()) {
       setIsAnalyzing(true);
       setCurrentImage("https://images.unsplash.com/photo-1518531933037-91b2f5f229cc?auto=format&fit=crop&q=80&w=200");
       try {
@@ -187,9 +188,9 @@ export default function App() {
             return;
           }
 
-          // Fallback to Gemini if DeepSeek fails
-          const geminiResponse = await ai.models.generateContent({
-            model: "gemini-3-flash-preview",
+          // Use latest Gemini Pro for text analysis
+          const geminiResponse = await aiClient.models.generateContent({
+            model: "gemini-3.1-pro-preview",
             contents: `Sei un esperto naturalista e geologo. Fornisci una scheda tecnica per l'elemento naturale: "${searchQuery}". 
             
             Usa SEMPRE questo formato Markdown pulito:
@@ -230,13 +231,12 @@ export default function App() {
         console.error("DeepSeek Search error, falling back to Gemini:", error);
         const errorMessage = error instanceof Error ? error.message : String(error);
         
-        // Direct Gemini fallback on fetch error
         try {
           if (!process.env.GEMINI_API_KEY) {
             throw new Error("GEMINI_API_KEY is missing");
           }
-          const geminiResponse = await ai.models.generateContent({
-            model: "gemini-3-flash-preview",
+          const geminiResponse = await aiClient.models.generateContent({
+            model: "gemini-3.1-pro-preview",
             contents: `Sei un esperto naturalista e geologo. Fornisci una scheda tecnica per l'elemento naturale: "${searchQuery}". 
             
             Usa SEMPRE questo formato Markdown pulito:
@@ -269,7 +269,7 @@ export default function App() {
           });
           const geminiResult = geminiResponse.text || "Errore durante la ricerca.";
           setAnalysisResult(geminiResult);
-          if (geminiResponse.text) await saveToHistory(geminiResponse.text);
+          if (geminiResponse.text) await saveToHistory(geminiResult);
         } catch (geminiError) {
           console.error("Gemini fallback error:", geminiError);
           if (errorMessage.includes('Load failed') || errorMessage.includes('Failed to fetch')) {
@@ -283,6 +283,7 @@ export default function App() {
         setSearchQuery('');
       }
     }
+
   };
 
   const handleCapture = useCallback(async (base64Image: string) => {
@@ -290,13 +291,18 @@ export default function App() {
     setShowCamera(false);
     setCurrentImage(base64Image);
 
-    let geminiResult = "Identificazione visiva non disponibile (chiave API mancante o errore).";
+    if (!process.env.GEMINI_API_KEY) {
+      console.error("GEMINI_API_KEY is missing!");
+      setAnalysisResult("Errore: Chiave API Gemini mancante.");
+      setIsAnalyzing(false);
+      return;
+    }
 
     try {
-      // Step 1: Gemini for Vision
+      // Step 1: Gemini for Vision (using the latest Flash model for speed)
       console.log("Starting Gemini Vision analysis...");
-      const geminiResponse = await ai.models.generateContent({
-        model: "gemini-1.5-flash-latest",
+      const geminiResponse = await aiClient.models.generateContent({
+        model: "gemini-3-flash-preview",
         contents: {
           parts: [
             {
@@ -344,32 +350,57 @@ export default function App() {
         }
       });
 
-      geminiResult = geminiResponse.text || geminiResult;
-      console.log("Gemini Vision success or handled partial failure.");
-    } catch (geminiError) {
-      console.warn("Gemini Vision failed, falling back to basic result:", geminiError);
-      // We don't throw here, we continue with the default geminiResult to DeepSeek
-    }
-
-    try {
-      // Step 2: DeepSeek for Deep Enhancement
-      console.log("Enhancing with DeepSeek...");
-      const deepseekResponse = await fetchWithTimeout('/api/deepseek/enhance', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ geminiResult })
-      });
-      const deepseekData = await deepseekResponse.json();
+      const geminiResult = geminiResponse.text || "Spiacente, non sono riuscito a identificare l'elemento.";
+      console.log("Gemini Vision success, enhancing with Gemini 3.1 Pro...");
       
-      const resultText = deepseekData.text || geminiResult;
+      // Step 2: Use Gemini 3.1 Pro for Deep Enhancement (Reasoning & Detail) instead of external APIs
+      const enhancedResponse = await aiClient.models.generateContent({
+        model: "gemini-3.1-pro-preview",
+        contents: `Sei un esperto naturalista. Trasforma i dati di identificazione in una scheda professionale e ordinata seguendo rigorosamente lo schema.
+        
+        Dati identificazione: ${geminiResult}
+        
+        Usa SEMPRE questo formato Markdown pulito:
+        # [CLASSE] Oggetto diagnosticato
+        
+        ### 1. Identificazione
+        **Nome comune:** [Nome]
+        **Nome scientifico:** *[Nome Scientifico]*
+        
+        ### 2. Caratteristiche Visive
+        [Descrizione]
+        
+        ### 3. Varianti e Stadi Vitali
+        [Descrizione]
+        
+        ### 4. Stato di Salute
+        **Diagnosi:** [Stato]
+        [Dettagli]
+        
+        ### 5. Diagnosi Differenziale
+        [Dettagli]
+        
+        ### 6. Cure e Trattamenti
+        *   **Biologiche:** [Consigli]
+        *   **Chimiche:** [Consigli]
+        *   **Meccaniche:** [Consigli]
+        *   **Culturali:** [Consigli]
+        
+        REGOLE: In italiano, professionale, box avviso se pericoloso.`
+      });
+
+      const resultText = enhancedResponse.text || geminiResult;
       console.log("Analysis complete.");
       setAnalysisResult(resultText);
       await saveToHistory(resultText, base64Image);
     } catch (error) {
-      console.error("DeepSeek Enhancement error:", error);
-      // Fallback to gemini result if DeepSeek fails
-      setAnalysisResult(geminiResult);
-      await saveToHistory(geminiResult, base64Image);
+      console.error("Analysis error:", error);
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      if (errorMessage.includes('Load failed') || errorMessage.includes('Failed to fetch')) {
+        setAnalysisResult("Errore di connessione: Assicurati di essere online e riprova.");
+      } else {
+        setAnalysisResult("Si è verificato un errore durante l'analisi. Per favore, riprova.");
+      }
     } finally {
       setIsAnalyzing(false);
     }
@@ -378,13 +409,14 @@ export default function App() {
   const handleClearHistory = async () => {
     if (!user) return;
     triggerHaptic(50);
+    const path = `users/${user.uid}/history`;
     try {
-      const q = query(collection(db, 'users', user.uid, 'history'));
+      const q = query(collection(db, path));
       const snapshot = await getDocs(q);
-      const deletePromises = snapshot.docs.map(d => deleteDoc(doc(db, 'users', user.uid, 'history', d.id)));
+      const deletePromises = snapshot.docs.map(d => deleteDoc(doc(db, path, d.id)));
       await Promise.all(deletePromises);
     } catch (err) {
-      console.error("Error clearing history:", err);
+      handleFirestoreError(err, OperationType.DELETE, path);
     }
   };
 
@@ -417,21 +449,31 @@ export default function App() {
   ];
 
   return (
-    <div className="min-h-screen bg-[#FDFCF8] dark:bg-stone-950 text-stone-800 dark:text-stone-200 font-sans selection:bg-emerald-100 dark:selection:bg-emerald-900/30">
+    <div className="min-h-screen text-text-primary font-sans selection:bg-accent/30 selection:dark:bg-accent/30">
       {/* Header */}
-      <header className="fixed top-0 left-0 right-0 p-4 sm:p-6 flex justify-between items-center z-30 bg-[#FDFCF8]/80 dark:bg-stone-950/80 backdrop-blur-md border-b border-stone-100 dark:border-stone-900 sm:border-none">
+      <header className="fixed top-0 left-0 right-0 p-4 sm:p-6 flex justify-between items-center z-30 bg-glass/80 backdrop-blur-xl border-b border-white/20 dark:bg-stone-950/80 dark:border-stone-900 sm:border-none">
         <div 
-          className="flex items-center gap-2 cursor-pointer min-w-0"
+          className="flex items-center gap-3 cursor-pointer min-w-0"
           onClick={() => handleTabChange('home')}
         >
-          <div className="w-8 h-8 sm:w-10 sm:h-10 bg-emerald-600 rounded-lg sm:rounded-xl flex items-center justify-center shadow-lg shadow-emerald-100 dark:shadow-none flex-shrink-0">
-            <Leaf className="text-white" size={20} />
+          <div className="w-10 h-10 bg-accent rounded-[14px] flex items-center justify-center shadow-lg shadow-accent/20 dark:shadow-none flex-shrink-0">
+            <Leaf className="text-white" size={24} />
           </div>
-          <h1 className="text-lg sm:text-2xl font-bold tracking-tight text-stone-900 dark:text-white leading-none">BioScan <span className="text-emerald-600">Verde</span></h1>
+          <div className="flex flex-col gap-0.5">
+            <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-text-primary dark:text-white leading-none font-display uppercase tracking-widest text-[14px] sm:text-[18px]">BioScan <span className="text-accent">Verde</span></h1>
+            <motion.div 
+              initial={{ opacity: 0, x: -10 }}
+              animate={{ opacity: 1, x: 0 }}
+              className="flex items-center gap-1.5 text-text-secondary dark:text-stone-500 text-[8px] sm:text-[10px] font-bold uppercase tracking-[0.2em]"
+            >
+              <div className="w-1 h-1 bg-accent rounded-full animate-pulse" />
+              <span>Ciao, {user.displayName || 'Esploratore'}</span>
+            </motion.div>
+          </div>
         </div>
         
         {/* History Quick Access Badge */}
-        <div className="flex items-center gap-2 flex-shrink-0">
+        <div className="flex items-center gap-3 flex-shrink-0">
           <motion.button 
             onClick={() => {
               handleTabChange('history');
@@ -440,7 +482,7 @@ export default function App() {
             animate={hasNewResult ? { 
               scale: [1, 1.1, 1],
               rotate: [0, 5, -5, 0],
-              backgroundColor: ['#F5F5F4', '#10B981', '#F5F5F4']
+              backgroundColor: ['#FFFFFF', '#444C2E', '#FFFFFF']
             } : {}}
             transition={{ 
               duration: 0.8, 
@@ -448,47 +490,43 @@ export default function App() {
               repeatDelay: 1.5
             }}
             className={cn(
-              "p-2 rounded-full transition-all relative shadow-sm",
-              activeTab === 'history' ? "bg-emerald-600 text-white" : "bg-stone-100 dark:bg-stone-800 text-stone-600 dark:text-stone-400 hover:bg-stone-200 dark:hover:bg-stone-700"
+              "p-3 rounded-full transition-all relative border border-white/50 bg-white/20 backdrop-blur-md shadow-soft dark:bg-stone-800 dark:border-stone-700",
+              activeTab === 'history' ? "bg-accent text-white border-accent" : "text-text-primary dark:text-stone-400 hover:bg-white/40"
             )}
           >
-            <History size={18} className={cn(hasNewResult && "text-emerald-600")} />
+            <History size={20} strokeWidth={1.5} className={cn(hasNewResult && "text-accent")} />
             {hasNewResult && (
-              <span className="absolute -top-1 -right-1 w-3 h-3 bg-emerald-500 border-2 border-[#FDFCF8] dark:border-stone-950 rounded-full animate-pulse" />
+              <span className="absolute -top-1 -right-1 w-4 h-4 bg-accent border-2 border-white dark:border-stone-950 rounded-full animate-pulse" />
             )}
           </motion.button>
 
           <button 
             onClick={() => setIsDarkMode(!isDarkMode)}
-            className="p-2 bg-stone-100 dark:bg-stone-800 text-stone-600 dark:text-stone-400 rounded-full hover:bg-emerald-50 dark:hover:bg-emerald-900/30 transition-all shadow-sm"
+            className="p-3 bg-white/20 border border-white/50 backdrop-blur-md text-text-primary dark:bg-stone-800 dark:border-stone-700 dark:text-stone-400 rounded-full hover:bg-white/40 transition-all shadow-soft"
             title={isDarkMode ? "Tema Chiaro" : "Tema Scuro"}
           >
-            {isDarkMode ? <Sun size={18} /> : <Moon size={18} />}
+            {isDarkMode ? <Sun size={20} strokeWidth={1.5} /> : <Moon size={20} strokeWidth={1.5} />}
+          </button>
+
+          <button 
+            onClick={() => setShowSettings(true)}
+            className="p-3 bg-white/20 border border-white/50 backdrop-blur-md text-text-primary dark:bg-stone-800 dark:border-stone-700 dark:text-stone-400 rounded-full hover:bg-white/40 transition-all shadow-soft"
+            title="Impostazioni"
+          >
+            <Settings size={20} strokeWidth={1.5} />
           </button>
 
           <button 
             onClick={handleLogout}
-            className="p-2 bg-stone-100 dark:bg-stone-800 text-stone-600 dark:text-stone-400 rounded-full hover:bg-rose-50 dark:hover:bg-rose-900/30 hover:text-rose-600 transition-all shadow-sm"
+            className="p-3 bg-white/20 border border-white/50 backdrop-blur-md text-text-primary dark:bg-stone-800 dark:border-stone-700 dark:text-stone-400 rounded-full hover:bg-rose-500/10 hover:text-rose-600 transition-all shadow-soft"
             title="Logout"
           >
-            <LogOut size={18} />
+            <LogOut size={20} strokeWidth={1.5} />
           </button>
         </div>
       </header>
 
-      {/* User Greeting */}
-      <div className="fixed top-20 left-0 right-0 px-6 z-20 pointer-events-none">
-        <div className="max-w-md mx-auto">
-          <motion.div 
-            initial={{ opacity: 0, x: -10 }}
-            animate={{ opacity: 1, x: 0 }}
-            className="flex items-center gap-2 text-stone-400 dark:text-stone-500 text-xs font-bold uppercase tracking-widest"
-          >
-            <User size={12} className="text-emerald-600" />
-            <span>Ciao, {user.displayName || 'Esploratore'}</span>
-          </motion.div>
-        </div>
-      </div>
+
 
       {/* Main Content */}
       <AnimatePresence mode="wait">
@@ -498,60 +536,45 @@ export default function App() {
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
-            className="px-6 pt-24 pb-32 max-w-md mx-auto"
+            className="px-6 pt-32 pb-32 max-w-md mx-auto"
           >
-            <div className="relative rounded-3xl overflow-hidden bg-emerald-900 h-80 mb-8 shadow-2xl group">
+            <div className="relative rounded-[48px] overflow-hidden bg-accent/20 h-96 mb-10 shadow-soft group border-[12px] border-white dark:border-stone-800">
               <img 
-                src="https://images.unsplash.com/photo-1518531933037-91b2f5f229cc?auto=format&fit=crop&q=80&w=1000" 
+                src="https://images.unsplash.com/photo-1542332213-31f87348057f?auto=format&fit=crop&q=80&w=1000" 
                 alt="Nature Background"
-                className="w-full h-full object-cover opacity-60 group-hover:scale-105 transition-transform duration-700"
+                className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-1000"
                 referrerPolicy="no-referrer"
               />
-              <div className="absolute inset-0 p-8 flex flex-col justify-end bg-gradient-to-t from-emerald-950/80 to-transparent">
-                <h2 className="text-4xl font-bold text-white mb-2 leading-tight">Esplora il <br/> Mondo Verde</h2>
-                <p className="text-emerald-100 text-sm max-w-xs opacity-90">Usa la fotocamera per identificare specie o la ricerca per consultare l'enciclopedia.</p>
+              <div className="absolute inset-0 p-10 flex flex-col justify-end bg-gradient-to-t from-text-primary/90 via-text-primary/10 to-transparent">
+                <h2 className="text-5xl font-black text-white mb-3 leading-[0.8] font-display uppercase tracking-tighter">Bio <br/> Scan.</h2>
+                <p className="text-white/80 text-[10px] uppercase tracking-[0.3em] font-bold">Nature Identification AI</p>
               </div>
             </div>
 
             {/* Search Bar */}
             <div className="relative mb-12">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-stone-400 dark:text-stone-500" size={20} />
+              <Search className="absolute left-8 top-1/2 -translate-y-1/2 text-accent" size={24} />
               <input 
                 type="text" 
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 onKeyDown={handleSearch}
-                placeholder="Cerca una pianta o un minerale..."
-                className="w-full pl-12 pr-4 py-5 bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-800 rounded-2xl shadow-sm focus:outline-none focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500 transition-all text-lg text-stone-900 dark:text-white"
+                placeholder="Cerca nella natura..."
+                className="w-full pl-16 pr-8 py-6 bg-white/90 dark:bg-stone-900 border border-white/50 dark:border-stone-800 rounded-[40px] shadow-soft focus:outline-none focus:ring-12 focus:ring-accent/10 focus:border-accent transition-all text-lg text-text-primary dark:text-white placeholder:text-text-secondary/50"
               />
-              <div className="mt-3 flex gap-2 overflow-x-auto pb-2 no-scrollbar">
-                {['Lavanda', 'Quarzo', 'Quercia', 'Orchidea'].map(tag => (
-                  <button 
-                    key={tag}
-                    onClick={() => {
-                      setSearchQuery(tag);
-                      // Trigger search manually
-                      const event = { key: 'Enter', target: { value: tag } } as any;
-                      handleSearch(event);
-                    }}
-                    className="px-4 py-1.5 bg-stone-100 dark:bg-stone-800 text-stone-500 dark:text-stone-400 text-xs rounded-full hover:bg-emerald-50 dark:hover:bg-emerald-900/30 hover:text-emerald-600 transition-colors whitespace-nowrap"
-                  >
-                    {tag}
-                  </button>
-                ))}
-              </div>
             </div>
 
-            {/* Quick Stats or Tips */}
-            <div className="bg-white dark:bg-stone-900 p-6 rounded-3xl border border-stone-100 dark:border-stone-800 shadow-sm">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="w-10 h-10 bg-amber-50 dark:bg-amber-900/20 rounded-xl flex items-center justify-center">
-                  <Sparkles className="text-amber-600 dark:text-amber-400" size={20} />
+            {/* Quick Tips */}
+            <div className="bg-white/60 backdrop-blur-md dark:bg-stone-900 p-10 rounded-[48px] border border-white/50 dark:border-stone-800 relative overflow-hidden group shadow-soft">
+              <div className="absolute -top-10 -right-10 w-40 h-40 bg-accent/20 rounded-full blur-3xl group-hover:scale-150 transition-transform duration-1000" />
+              <div className="flex items-center gap-4 mb-6 relative z-10">
+                <div className="w-12 h-12 bg-accent rounded-full flex items-center justify-center shadow-lg shadow-accent/20">
+                  <Sparkles className="text-white" size={24} />
                 </div>
-                <h3 className="font-bold text-stone-800 dark:text-stone-100">Consiglio del giorno</h3>
+                <h3 className="font-bold text-text-primary dark:text-stone-100 font-display uppercase tracking-[0.2em] text-[10px]">Daily Tip</h3>
               </div>
-              <p className="text-sm text-stone-600 dark:text-stone-400 leading-relaxed">
-                Per un'identificazione perfetta, assicurati che l'elemento sia ben illuminato e al centro dell'inquadratura. Evita ombre troppo nette!
+              <p className="text-sm text-text-secondary dark:text-stone-400 leading-relaxed relative z-10 font-medium tracking-[0.02em]">
+                Per un'identificazione perfetta, inquadra l'elemento al centro. Evita ombre che potrebbero confondere l'AI!
               </p>
             </div>
           </motion.main>
@@ -576,7 +599,7 @@ export default function App() {
       </AnimatePresence>
 
       {/* Bottom Navigation Simplified - Only Camera */}
-      <nav className="fixed bottom-0 left-0 right-0 p-8 bg-gradient-to-t from-[#FDFCF8] dark:from-stone-950 via-[#FDFCF8]/80 dark:via-stone-950/80 to-transparent pointer-events-none">
+      <nav className="fixed bottom-0 left-0 right-0 p-8 bg-gradient-to-t from-bg-end/80 dark:from-stone-950 via-bg-end/40 dark:via-stone-950/80 to-transparent pointer-events-none">
         <div className="max-w-md mx-auto flex justify-center pointer-events-auto">
           {/* Main Action Button */}
           <button
@@ -584,9 +607,9 @@ export default function App() {
               triggerHaptic(30);
               setShowCamera(true);
             }}
-            className="w-24 h-24 bg-emerald-600 rounded-full flex items-center justify-center text-white shadow-2xl shadow-emerald-500/40 hover:bg-emerald-700 transition-all active:scale-90 relative -top-2 border-8 border-[#FDFCF8] dark:border-stone-950"
+            className="w-24 h-24 bg-accent rounded-full flex items-center justify-center text-white shadow-soft hover:scale-110 hover:shadow-accent/40 transition-all active:scale-90 relative -top-4 border-[10px] border-white dark:border-stone-950"
           >
-            <CameraIcon size={36} />
+            <CameraIcon size={36} strokeWidth={1.5} />
           </button>
         </div>
       </nav>
@@ -605,14 +628,14 @@ export default function App() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[60] bg-emerald-950/90 backdrop-blur-sm flex flex-col items-center justify-center p-6 text-center"
+            className="fixed inset-0 z-[60] bg-text-primary/90 backdrop-blur-md flex flex-col items-center justify-center p-6 text-center"
           >
-            <div className="relative">
-              <Loader2 className="text-emerald-400 animate-spin mb-6" size={64} />
-              <Leaf className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-emerald-400 opacity-50" size={24} />
+            <div className="relative mb-8">
+              <div className="w-24 h-24 border-4 border-accent/20 border-t-accent rounded-full animate-spin" />
+              <Leaf className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-accent" size={32} />
             </div>
-            <h2 className="text-2xl font-bold text-white mb-2">Analisi in corso...</h2>
-            <p className="text-emerald-200">Sto interrogando la saggezza della natura per identificare il tuo reperto.</p>
+            <h2 className="text-3xl font-black text-white mb-3 font-display uppercase tracking-widest">Analisi...</h2>
+            <p className="text-accent/80 text-sm uppercase tracking-widest font-bold">Interrogando la natura</p>
           </motion.div>
         )}
 
@@ -626,6 +649,13 @@ export default function App() {
             }} 
           />
         )}
+
+        {showSettings && (
+          <SettingsView 
+            onClose={() => setShowSettings(false)} 
+          />
+        )}
+
       </AnimatePresence>
     </div>
   );

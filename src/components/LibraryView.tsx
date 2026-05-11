@@ -30,38 +30,48 @@ export const LibraryView: React.FC<LibraryViewProps> = ({ category, onClose }) =
         initial={{ opacity: 0, x: 20 }}
         animate={{ opacity: 1, x: 0 }}
         exit={{ opacity: 0, x: 20 }}
-        className="fixed inset-0 z-40 bg-[#FDFCF8] dark:bg-stone-950 pt-24 px-6 pb-32 overflow-y-auto"
+        className="fixed inset-0 z-40 pt-32 px-6 pb-32 overflow-y-auto"
+        style={{ background: 'linear-gradient(135deg, var(--color-bg-start) 0%, var(--color-bg-end) 100%)' }}
       >
-        <div className="max-w-md mx-auto space-y-8">
+        <div className="max-w-md mx-auto space-y-10">
           <div className="text-center">
-            <div className="w-20 h-20 bg-emerald-600 rounded-3xl flex items-center justify-center mx-auto mb-4 shadow-xl shadow-emerald-100 dark:shadow-none">
-              <Leaf className="text-white" size={40} />
+            <div className="w-24 h-24 bg-accent rounded-[32px] flex items-center justify-center mx-auto mb-6 shadow-soft">
+              <Leaf className="text-white" size={48} />
             </div>
-            <h2 className="text-3xl font-bold text-stone-900 dark:text-white">BioScan Verde</h2>
-            <p className="text-stone-500 dark:text-stone-400">Versione 1.0.0</p>
+            <h2 className="text-4xl font-black text-text-primary dark:text-white font-display tracking-tight uppercase italic">Bio<span className="text-accent">Scan.</span></h2>
+            <p className="text-text-secondary dark:text-stone-400 font-bold text-[10px] uppercase tracking-[0.3em] mt-3">Versione 1.0.0 • AI Powered</p>
           </div>
           
-          <div className="space-y-4">
-            <h3 className="text-xl font-bold text-stone-800 dark:text-stone-100">Cos'è BioScan?</h3>
-            <p className="text-stone-600 dark:text-stone-400 leading-relaxed">
+          <div className="space-y-6 bg-white/60 backdrop-blur-md p-10 rounded-[48px] border border-white shadow-soft">
+            <h3 className="text-2xl font-black text-text-primary dark:text-stone-100 font-display uppercase tracking-tight">Cos'è BioScan?</h3>
+            <p className="text-text-secondary dark:text-stone-400 leading-relaxed font-bold italic text-sm">
               BioScan Verde è il tuo compagno digitale per l'esplorazione della natura. 
               Grazie all'intelligenza artificiale avanzata, puoi identificare istantaneamente 
               piante, rocce, alberi e molto altro semplicemente scattando una foto.
             </p>
           </div>
 
-          <div className="p-6 bg-emerald-50 dark:bg-emerald-900/20 rounded-3xl border border-emerald-100 dark:border-emerald-900/30">
-            <h4 className="font-bold text-emerald-800 dark:text-emerald-400 mb-2">Come funziona?</h4>
-            <ul className="space-y-2 text-sm text-emerald-700 dark:text-emerald-300">
-              <li className="flex gap-2"><span>1.</span> Premi il pulsante centrale</li>
-              <li className="flex gap-2"><span>2.</span> Inquadra l'elemento naturale</li>
-              <li className="flex gap-2"><span>3.</span> Scatta e attendi l'analisi</li>
+          <div className="p-10 bg-accent rounded-[48px] shadow-lg shadow-accent/20 border border-white">
+            <h4 className="font-black text-white mb-6 font-display uppercase tracking-widest text-xs">Come funziona?</h4>
+            <ul className="space-y-6 text-sm text-white/90 font-bold uppercase tracking-tight">
+              <li className="flex gap-4 items-center">
+                <span className="w-8 h-8 bg-white text-accent rounded-full flex items-center justify-center text-[10px] flex-shrink-0 font-black">1</span>
+                <span>Premi il pulsante fotocamera</span>
+              </li>
+              <li className="flex gap-4 items-center">
+                <span className="w-8 h-8 bg-white text-accent rounded-full flex items-center justify-center text-[10px] flex-shrink-0 font-black">2</span>
+                <span>Inquadra l'elemento naturale</span>
+              </li>
+              <li className="flex gap-4 items-center">
+                <span className="w-8 h-8 bg-white text-accent rounded-full flex items-center justify-center text-[10px] flex-shrink-0 font-black">3</span>
+                <span>Attendi il responso dell'AI</span>
+              </li>
             </ul>
           </div>
 
           <button 
             onClick={onClose}
-            className="w-full py-4 bg-stone-200 dark:bg-stone-800 text-stone-700 dark:text-stone-300 rounded-2xl font-bold hover:bg-stone-300 dark:hover:bg-stone-700 transition-colors"
+            className="w-full py-6 bg-white/50 backdrop-blur-md text-text-primary border border-white rounded-full font-black uppercase tracking-[0.3em] text-[10px] hover:bg-accent hover:text-white transition-all shadow-soft active:scale-95"
           >
             Torna alla Home
           </button>
@@ -75,29 +85,38 @@ export const LibraryView: React.FC<LibraryViewProps> = ({ category, onClose }) =
       initial={{ opacity: 0, x: 20 }}
       animate={{ opacity: 1, x: 0 }}
       exit={{ opacity: 0, x: 20 }}
-      className="fixed inset-0 z-40 bg-[#FDFCF8] dark:bg-stone-950 pt-24 px-6 pb-32 overflow-y-auto"
+      className="fixed inset-0 z-40 pt-32 px-6 pb-32 overflow-y-auto"
+      style={{ background: 'linear-gradient(135deg, var(--color-bg-start) 0%, var(--color-bg-end) 100%)' }}
     >
       <div className="max-w-md mx-auto">
-        <div className="flex items-center justify-between mb-8">
-          <h2 className="text-3xl font-bold text-stone-900 dark:text-white capitalize">
-            {category === 'plants' ? 'Flora' : category === 'rocks' ? 'Geologia' : 'Alberi'}
+        <div className="flex items-center justify-between mb-10">
+          <h2 className="text-4xl font-black text-text-primary dark:text-white capitalize font-display uppercase tracking-tight italic">
+            {category === 'plants' ? 'Flora' : category === 'rocks' ? 'Geologia' : 'Alberi'}<span className="text-accent">.</span>
           </h2>
-          <button onClick={onClose} className="text-emerald-600 dark:text-emerald-400 font-semibold">Chiudi</button>
+          <button onClick={onClose} className="text-text-secondary font-black uppercase tracking-[0.2em] text-[10px] px-6 py-3 bg-white/50 border border-white rounded-full hover:bg-accent hover:text-white transition-all shadow-sm">Chiudi</button>
         </div>
 
-        <div className="space-y-4">
-          {items.map((item) => (
-            <div key={item.id} className="bg-white dark:bg-stone-900 p-4 rounded-3xl border border-stone-100 dark:border-stone-800 shadow-sm flex gap-4 group cursor-pointer hover:shadow-md transition-shadow">
-              <div className="w-24 h-24 rounded-2xl overflow-hidden flex-shrink-0">
-                <img src={item.image} alt={item.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" referrerPolicy="no-referrer" />
+        <div className="space-y-6">
+          {items.length === 0 ? (
+            <div className="text-center py-24 px-10 bg-white/60 backdrop-blur-md dark:bg-stone-900 rounded-[48px] border border-white shadow-soft">
+                <div className="w-20 h-20 bg-bg-start dark:bg-stone-800 rounded-full flex items-center justify-center mx-auto mb-6">
+                    <Leaf className="text-accent/30" size={40} />
+                </div>
+                <h3 className="font-black text-text-primary dark:text-white mb-2 font-display uppercase tracking-widest text-lg">In Arrivo</h3>
+                <p className="text-text-secondary dark:text-stone-400 text-[10px] uppercase tracking-widest font-black">Enciclopedia in fase di aggiornamento.</p>
+            </div>
+          ) : items.map((item) => (
+            <div key={item.id} className="bg-white/70 backdrop-blur-md dark:bg-stone-900 p-5 rounded-[40px] border border-white dark:border-stone-800 shadow-soft flex gap-5 group cursor-pointer hover:scale-[1.02] transition-all">
+              <div className="w-24 h-24 rounded-[32px] overflow-hidden flex-shrink-0 border-[6px] border-white dark:border-stone-800">
+                <img src={item.image} alt={item.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-1000" referrerPolicy="no-referrer" />
               </div>
               <div className="flex-1 py-1">
-                <h3 className="font-bold text-stone-800 dark:text-stone-100">{item.name}</h3>
-                {item.scientificName && <p className="text-xs italic text-emerald-600 dark:text-emerald-400 mb-1">{item.scientificName}</p>}
-                <p className="text-xs text-stone-500 dark:text-stone-400 line-clamp-2">{item.description}</p>
+                <h3 className="font-black text-text-primary dark:text-stone-100 font-display uppercase tracking-tight text-lg">{item.name}</h3>
+                {item.scientificName && <p className="text-[10px] font-black uppercase tracking-widest text-accent mb-2">{item.scientificName}</p>}
+                <p className="text-xs text-text-secondary dark:text-stone-400 line-clamp-2 font-bold italic">{item.description}</p>
               </div>
               <div className="flex items-center">
-                <ChevronRight size={20} className="text-stone-300 dark:text-stone-600" />
+                <ChevronRight size={24} className="text-accent/30 group-hover:text-accent group-hover:translate-x-1 transition-all" />
               </div>
             </div>
           ))}

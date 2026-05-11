@@ -1,19 +1,19 @@
 import express from "express";
 import { createServer as createViteServer } from "vite";
 import path from "path";
-import { OpenAI } from "openai";
 import dotenv from "dotenv";
+import OpenAI from "openai";
 
 dotenv.config();
 
 const deepseek = new OpenAI({
-  apiKey: process.env.DEEPSEEK_API_KEY || "sk-53e648ad61794ca387b1d99ad1198bff", // Fallback for immediate use
+  apiKey: process.env.DEEPSEEK_API_KEY || "empty",
   baseURL: "https://api.deepseek.com",
 });
 
 async function startServer() {
   const app = express();
-  const PORT = 3001;
+  const PORT = 3000;
 
   app.use(express.json({ limit: '50mb' }));
 
