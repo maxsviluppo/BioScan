@@ -34,6 +34,7 @@ import {
   serverTimestamp,
   deleteDoc,
   getDocs,
+  getDoc,
   doc
 } from 'firebase/firestore';
 
@@ -58,7 +59,7 @@ export default function App() {
   });
   const [showSettings, setShowSettings] = useState(false);
 
-  const aiClient = new GoogleGenAI({ 
+  const getAiClient = () => new GoogleGenAI({ 
     apiKey: (typeof window !== 'undefined' ? localStorage.getItem('CUSTOM_GEMINI_KEY') : '') || process.env.GEMINI_API_KEY || '' 
   });
 
@@ -74,8 +75,18 @@ export default function App() {
 
   // Auth state listener
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
       setUser(currentUser);
+      if (currentUser) {
+        try {
+          const userDoc = await getDoc(doc(db, 'users', currentUser.uid));
+          if (userDoc.exists() && userDoc.data().geminiKey) {
+            localStorage.setItem('CUSTOM_GEMINI_KEY', userDoc.data().geminiKey);
+          }
+        } catch (e) {
+          console.error("Error loading API key from DB", e);
+        }
+      }
       setIsAuthReady(true);
     });
     return () => unsubscribe();
@@ -161,7 +172,7 @@ export default function App() {
           throw new Error("GEMINI_API_KEY is missing");
         }
 
-        const geminiResponse = await aiClient.models.generateContent({
+        const geminiResponse = await getAiClient().models.generateContent({
           model: "gemini-2.0-flash",
           contents: `Sei un esperto naturalista e botanico/geologo. Fornisci una scheda tecnica ESTREMAMENTE DETTAGLIATA, LUNGA E RICCA DI INFORMAZIONI per l'elemento naturale: "${searchQuery}". Sii molto generoso nelle descrizioni, includendo curiosità, contesto ecologico, origini e particolarità. Non essere breve.
           
@@ -222,7 +233,7 @@ export default function App() {
 
     try {
       console.log("Starting Gemini 1.5 Flash Vision analysis...");
-      const geminiResponse = await aiClient.models.generateContent({
+      const geminiResponse = await getAiClient().models.generateContent({
         model: "gemini-2.0-flash",
         contents: {
           parts: [
@@ -534,6 +545,7 @@ export default function App() {
 
         {showSettings && (
           <SettingsView 
+            user={user}
             onClose={() => setShowSettings(false)} 
           />
         )}

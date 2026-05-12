@@ -1,12 +1,34 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { motion } from 'motion/react';
-import { X, Settings, ExternalLink, Key, AlertCircle } from 'lucide-react';
+import { X, Settings, ExternalLink, Key, AlertCircle, Loader2 } from 'lucide-react';
+import { doc, setDoc } from 'firebase/firestore';
+import { db } from '../firebase';
+import { User as FirebaseUser } from 'firebase/auth';
 
 interface SettingsViewProps {
+  user: FirebaseUser | null;
   onClose: () => void;
 }
 
-export const SettingsView: React.FC<SettingsViewProps> = ({ onClose }) => {
+export const SettingsView: React.FC<SettingsViewProps> = ({ user, onClose }) => {
+  const [apiKey, setApiKey] = useState(() => {
+    return typeof window !== 'undefined' ? localStorage.getItem('CUSTOM_GEMINI_KEY') || '' : '';
+  });
+  const [isSaving, setIsSaving] = useState(false);
+
+  const handleSaveAndClose = async () => {
+    setIsSaving(true);
+    localStorage.setItem('CUSTOM_GEMINI_KEY', apiKey);
+    if (user && apiKey) {
+      try {
+        await setDoc(doc(db, 'users', user.uid), { geminiKey: apiKey }, { merge: true });
+      } catch (err) {
+        console.error("Failed to save key to DB", err);
+      }
+    }
+    setIsSaving(false);
+    onClose();
+  };
   return (
     <motion.div
       initial={{ opacity: 0 }}
@@ -50,10 +72,8 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ onClose }) => {
                 <input 
                   type="password"
                   placeholder="Incolla qui la tua API Key..."
-                  defaultValue={typeof window !== 'undefined' ? localStorage.getItem('CUSTOM_GEMINI_KEY') || '' : ''}
-                  onChange={(e) => {
-                    localStorage.setItem('CUSTOM_GEMINI_KEY', e.target.value);
-                  }}
+                  value={apiKey}
+                  onChange={(e) => setApiKey(e.target.value)}
                   className="w-full bg-white border border-gray-100 rounded-2xl px-4 py-3 sm:py-4 text-sm font-bold focus:ring-2 focus:ring-accent outline-none shadow-inner"
                 />
               </div>
@@ -94,10 +114,12 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ onClose }) => {
         </div>
 
         <button
-          onClick={onClose}
-          className="w-full mt-6 sm:mt-10 py-4 sm:py-5 bg-text-primary text-white rounded-full font-black uppercase tracking-[0.3em] text-[10px] hover:bg-stone-800 transition-all shadow-lg"
+          onClick={handleSaveAndClose}
+          disabled={isSaving}
+          className="w-full mt-6 sm:mt-10 py-4 sm:py-5 flex justify-center items-center gap-2 bg-text-primary text-white rounded-full font-black uppercase tracking-[0.3em] text-[10px] hover:bg-stone-800 transition-all shadow-lg disabled:opacity-70"
         >
-          Chiudi Impostazioni
+          {isSaving ? <Loader2 className="animate-spin" size={16} /> : null}
+          Salva e Chiudi
         </button>
         </motion.div>
     </motion.div>

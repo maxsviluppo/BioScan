@@ -5,6 +5,9 @@
   --font-sans: "Montserrat", ui-sans-serif, system-ui, sans-serif;
   --font-display: "Montserrat", sans-serif;
   
+  /* Enable class-based dark mode in Tailwind CSS v4 */
+  @custom-variant dark (&:where(.dark, .dark *));
+  
   --color-accent: #444C2E;
   --color-bg-start: #F0F4F8;
   --color-bg-end: #E2EAF1;
