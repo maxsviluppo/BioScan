@@ -74,7 +74,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ user, onClose }) => 
                   placeholder="Incolla qui la tua API Key..."
                   value={apiKey}
                   onChange={(e) => setApiKey(e.target.value)}
-                  className="w-full bg-white border border-gray-100 rounded-2xl px-4 py-3 sm:py-4 text-sm font-bold focus:ring-2 focus:ring-accent outline-none shadow-inner"
+                  className="w-full bg-white border border-gray-100 rounded-2xl px-4 py-3 sm:py-4 text-base font-bold focus:ring-2 focus:ring-accent outline-none shadow-inner"
                 />
               </div>
               

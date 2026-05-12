@@ -166,7 +166,7 @@ export const Auth: React.FC<AuthProps> = ({ onSuccess }) => {
                   required={!isLogin}
                   value={displayName}
                   onChange={(e) => setDisplayName(e.target.value)}
-                  className="w-full pl-14 pr-6 py-4 sm:py-5 bg-white/50 dark:bg-stone-800 border border-white dark:border-stone-700 rounded-[24px] sm:rounded-[28px] focus:outline-none focus:ring-12 focus:ring-accent/10 focus:border-accent transition-all text-text-primary dark:text-white font-semibold placeholder:text-text-secondary/50 shadow-sm"
+                  className="w-full pl-14 pr-6 py-4 sm:py-5 bg-white/50 dark:bg-stone-800 border border-white dark:border-stone-700 rounded-[24px] sm:rounded-[28px] focus:outline-none focus:ring-12 focus:ring-accent/10 focus:border-accent transition-all text-base text-text-primary dark:text-white font-semibold placeholder:text-text-secondary/50 shadow-sm"
                 />
               </motion.div>
             )}

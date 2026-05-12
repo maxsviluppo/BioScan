@@ -168,7 +168,8 @@ export default function App() {
       try {
         console.log("Starting search with Gemini 2.0 Flash for:", searchQuery);
         
-        if (!process.env.GEMINI_API_KEY) {
+        const currentKey = (typeof window !== 'undefined' ? localStorage.getItem('CUSTOM_GEMINI_KEY') : '') || process.env.GEMINI_API_KEY;
+        if (!currentKey) {
           throw new Error("GEMINI_API_KEY is missing");
         }
 
@@ -224,9 +225,10 @@ export default function App() {
     setShowCamera(false);
     setCurrentImage(base64Image);
 
-    if (!process.env.GEMINI_API_KEY) {
+    const currentKey = (typeof window !== 'undefined' ? localStorage.getItem('CUSTOM_GEMINI_KEY') : '') || process.env.GEMINI_API_KEY;
+    if (!currentKey) {
       console.error("GEMINI_API_KEY is missing!");
-      setAnalysisResult("Errore: Chiave API Gemini mancante.");
+      setAnalysisResult("Errore: Chiave API Gemini mancante. Inseriscila nelle impostazioni.");
       setIsAnalyzing(false);
       return;
     }
