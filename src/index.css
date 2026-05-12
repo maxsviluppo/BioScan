@@ -64,7 +64,7 @@
     @apply text-stone-500 dark:text-stone-500 italic;
   }
   .markdown-body blockquote {
-    @apply p-4 sm:p-6 bg-accent/5 dark:bg-accent/10 border-l-4 border-accent rounded-r-2xl mb-6 sm:mb-8 italic text-text-secondary dark:text-accent text-[14px] sm:text-lg shadow-sm;
+    @apply p-4 sm:p-6 bg-accent/5 dark:bg-accent/10 border-l-4 border-accent rounded-2xl mb-6 sm:mb-8 italic text-text-secondary dark:text-accent text-[14px] sm:text-lg shadow-sm;
   }
   .markdown-body hr {
     @apply my-8 sm:my-12 border-accent/10 dark:border-stone-800;

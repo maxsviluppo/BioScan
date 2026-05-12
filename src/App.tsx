@@ -60,7 +60,7 @@ export default function App() {
   const [showSettings, setShowSettings] = useState(false);
 
   const getAiClient = () => new GoogleGenAI({ 
-    apiKey: (typeof window !== 'undefined' ? localStorage.getItem('CUSTOM_GEMINI_KEY') : '') || process.env.GEMINI_API_KEY || '' 
+    apiKey: (typeof window !== 'undefined' ? localStorage.getItem('CUSTOM_GEMINI_KEY') : '') || import.meta.env.VITE_GEMINI_API_KEY || '' 
   });
 
   // Dark mode effect
@@ -168,9 +168,9 @@ export default function App() {
       try {
         console.log("Starting search with Gemini 2.0 Flash for:", searchQuery);
         
-        const currentKey = (typeof window !== 'undefined' ? localStorage.getItem('CUSTOM_GEMINI_KEY') : '') || process.env.GEMINI_API_KEY;
+        const currentKey = (typeof window !== 'undefined' ? localStorage.getItem('CUSTOM_GEMINI_KEY') : '') || import.meta.env.VITE_GEMINI_API_KEY;
         if (!currentKey) {
-          throw new Error("GEMINI_API_KEY is missing");
+          throw new Error("API Key mancante. Inseriscila nelle impostazioni.");
         }
 
         const geminiResponse = await getAiClient().models.generateContent({
@@ -210,8 +210,9 @@ export default function App() {
         setAnalysisResult(resultText);
         await saveToHistory(resultText);
       } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : String(error);
         console.error("Gemini Search error:", error);
-        setAnalysisResult("Si è verificato un errore durante la ricerca. Per favore, riprova.");
+        setAnalysisResult(`Si è verificato un errore: ${errorMessage}`);
       } finally {
         setIsAnalyzing(false);
         setSearchQuery('');
@@ -225,9 +226,9 @@ export default function App() {
     setShowCamera(false);
     setCurrentImage(base64Image);
 
-    const currentKey = (typeof window !== 'undefined' ? localStorage.getItem('CUSTOM_GEMINI_KEY') : '') || process.env.GEMINI_API_KEY;
+    const currentKey = (typeof window !== 'undefined' ? localStorage.getItem('CUSTOM_GEMINI_KEY') : '') || import.meta.env.VITE_GEMINI_API_KEY;
     if (!currentKey) {
-      console.error("GEMINI_API_KEY is missing!");
+      console.error("API Key mancante!");
       setAnalysisResult("Errore: Chiave API Gemini mancante. Inseriscila nelle impostazioni.");
       setIsAnalyzing(false);
       return;
@@ -294,7 +295,7 @@ export default function App() {
       if (errorMessage.includes('Load failed') || errorMessage.includes('Failed to fetch')) {
         setAnalysisResult("Errore di connessione: Assicurati di essere online e riprova.");
       } else {
-        setAnalysisResult("Si è verificato un errore durante l'analisi. Per favore, riprova.");
+        setAnalysisResult(`Si è verificato un errore: ${errorMessage}`);
       }
     } finally {
       setIsAnalyzing(false);
