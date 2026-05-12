@@ -166,7 +166,7 @@ export default function App() {
       setIsAnalyzing(true);
       setCurrentImage("https://images.unsplash.com/photo-1518531933037-91b2f5f229cc?auto=format&fit=crop&q=80&w=200");
       try {
-        console.log("Starting search with Gemini 2.0 Flash for:", searchQuery);
+        console.log("Starting search with Gemini 1.5 Flash for:", searchQuery);
         
         const currentKey = (typeof window !== 'undefined' ? localStorage.getItem('CUSTOM_GEMINI_KEY') : '') || import.meta.env.VITE_GEMINI_API_KEY;
         if (!currentKey) {
