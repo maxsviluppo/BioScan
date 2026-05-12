@@ -174,7 +174,7 @@ export default function App() {
         }
 
         const geminiResponse = await getAiClient().models.generateContent({
-          model: "gemini-2.0-flash",
+          model: "gemini-1.5-flash",
           contents: `Sei un esperto naturalista e botanico/geologo. Fornisci una scheda tecnica ESTREMAMENTE DETTAGLIATA, LUNGA E RICCA DI INFORMAZIONI per l'elemento naturale: "${searchQuery}". Sii molto generoso nelle descrizioni, includendo curiosità, contesto ecologico, origini e particolarità. Non essere breve.
           
           Usa SEMPRE questo formato Markdown pulito:
@@ -237,7 +237,7 @@ export default function App() {
     try {
       console.log("Starting Gemini 1.5 Flash Vision analysis...");
       const geminiResponse = await getAiClient().models.generateContent({
-        model: "gemini-2.0-flash",
+        model: "gemini-1.5-flash",
         contents: {
           parts: [
             {
