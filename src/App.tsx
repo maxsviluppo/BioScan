@@ -162,8 +162,8 @@ export default function App() {
         }
 
         const geminiResponse = await aiClient.models.generateContent({
-          model: "gemini-1.5-flash",
-          contents: `Sei un esperto naturalista e geologo. Fornisci una scheda tecnica dettagliata per l'elemento naturale: "${searchQuery}". 
+          model: "gemini-2.0-flash",
+          contents: `Sei un esperto naturalista e botanico/geologo. Fornisci una scheda tecnica ESTREMAMENTE DETTAGLIATA, LUNGA E RICCA DI INFORMAZIONI per l'elemento naturale: "${searchQuery}". Sii molto generoso nelle descrizioni, includendo curiosità, contesto ecologico, origini e particolarità. Non essere breve.
           
           Usa SEMPRE questo formato Markdown pulito:
           # [CLASSE] Oggetto diagnosticato
@@ -173,7 +173,7 @@ export default function App() {
           **Nome scientifico:** *[Nome Scientifico]*
           
           ### 2. Caratteristiche Visive
-          [Descrizione dettagliata in paragrafi]
+          [Descrizione ampia e generosa in più paragrafi, analizzando ogni dettaglio visivo]
           
           ### 3. Varianti e Stadi Vitali
           [Descrizione]
@@ -223,11 +223,11 @@ export default function App() {
     try {
       console.log("Starting Gemini 1.5 Flash Vision analysis...");
       const geminiResponse = await aiClient.models.generateContent({
-        model: "gemini-1.5-flash",
+        model: "gemini-2.0-flash",
         contents: {
           parts: [
             {
-              text: `Sei un esperto naturalista e geologo. Identifica l'elemento in questa immagine.
+              text: `Sei un esperto naturalista, botanico e geologo. Identifica minuziosamente l'elemento in questa immagine. Fornisci una risposta LUNGA, GENEROSA, E MOLTO DETTAGLIATA per ogni singola sezione. Non essere sbrigativo: esplora caratteristiche, curiosità, storia e biologia in modo approfondito.
               
               Rispondi SEMPRE seguendo questo formato Markdown pulito:
               # [CLASSE] Oggetto diagnosticato
@@ -237,7 +237,7 @@ export default function App() {
               **Nome scientifico:** *[Nome Scientifico]*
               
               ### 2. Caratteristiche Visive
-              [Descrizione dettagliata in paragrafi]
+              [Descrizione ampia e generosa in più paragrafi, analizzando ogni dettaglio visibile nell'immagine e tipico della specie]
               
               ### 3. Varianti e Stadi Vitali
               [Descrizione]

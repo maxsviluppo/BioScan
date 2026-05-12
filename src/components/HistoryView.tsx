@@ -32,19 +32,21 @@ export const HistoryView: React.FC<HistoryViewProps> = ({
       style={{ background: 'linear-gradient(135deg, var(--color-bg-start) 0%, var(--color-bg-end) 100%)' }}
     >
       <div className="max-w-md mx-auto">
-        <div className="flex items-center justify-between mb-10">
-          <div className="flex items-center gap-4">
-            <div className="w-14 h-14 bg-white/50 backdrop-blur-md rounded-2xl flex items-center justify-center shadow-soft border border-white">
-              <History className="text-accent" size={28} />
-            </div>
-            <h2 className="text-4xl font-black text-text-primary dark:text-white font-display uppercase tracking-widest italic">Storia<span className="text-accent">.</span></h2>
+        <button 
+          onClick={onClose}
+          className="absolute top-6 right-6 sm:top-8 sm:right-8 p-2.5 sm:p-3 bg-white/50 backdrop-blur-md border border-white rounded-full transition-all text-text-primary lg:hover:bg-rose-500 hover:text-white z-50 shadow-sm"
+        >
+          <X size={20} />
+        </button>
+
+        <div className="flex items-center gap-3 sm:gap-4 mb-8 sm:mb-10">
+          <div className="w-12 h-12 sm:w-14 sm:h-14 bg-accent rounded-2xl flex items-center justify-center shadow-lg shadow-accent/20">
+            <History className="text-white w-6 h-6 sm:w-7 sm:h-7" />
           </div>
-          <button 
-            onClick={onClose} 
-            className="text-text-secondary font-black uppercase tracking-widest text-[10px] px-6 py-3 bg-white/50 border border-white rounded-full hover:bg-accent hover:text-white transition-all shadow-sm"
-          >
-            Chiudi
-          </button>
+          <div>
+            <h2 className="text-2xl font-black text-text-primary dark:text-white font-display uppercase tracking-widest leading-none">Cronologia</h2>
+            <p className="text-text-secondary dark:text-stone-400 font-bold text-[10px] uppercase tracking-[0.2em] mt-1">Le tue scoperte</p>
+          </div>
         </div>
 
         {history.length === 0 ? (
@@ -68,7 +70,7 @@ export const HistoryView: React.FC<HistoryViewProps> = ({
                   onClick={() => onSelectItem(item)}
                   className="bg-white/70 backdrop-blur-md dark:bg-stone-900 p-5 rounded-[40px] border border-white dark:border-stone-800 shadow-soft flex gap-5 group cursor-pointer lg:hover:scale-[1.02] transition-all active:scale-[0.98] relative overflow-hidden"
                 >
-                  <div className="w-24 h-24 rounded-[32px] overflow-hidden flex-shrink-0 bg-bg-start dark:bg-stone-800 border-[6px] border-white dark:border-stone-800 shadow-sm">
+                  <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-[24px] sm:rounded-[32px] overflow-hidden flex-shrink-0 bg-bg-start dark:bg-stone-800 border-[4px] sm:border-[6px] border-white dark:border-stone-800 shadow-sm">
                     <img 
                       src={item.image.startsWith('http') ? item.image : `data:image/jpeg;base64,${item.image}`} 
                       alt="Scan preview" 
@@ -77,10 +79,10 @@ export const HistoryView: React.FC<HistoryViewProps> = ({
                       decoding="async"
                     />
                   </div>
-                  <div className="flex-1 py-1 min-w-0">
-                    <div className="flex items-center gap-2 text-accent mb-2">
-                      <Calendar size={14} />
-                      <span className="text-[10px] font-black uppercase tracking-[0.2em]">
+                  <div className="flex-1 py-1 min-w-0 flex flex-col justify-center">
+                    <div className="flex items-center gap-2 text-accent mb-1.5">
+                      <Calendar size={12} />
+                      <span className="text-[9px] sm:text-[10px] font-black uppercase tracking-[0.2em]">
                         {item.date.toLocaleDateString('it-IT', { 
                           day: 'numeric', 
                           month: 'short', 
@@ -89,10 +91,10 @@ export const HistoryView: React.FC<HistoryViewProps> = ({
                         })}
                       </span>
                     </div>
-                    <h3 className="font-extrabold text-text-primary dark:text-stone-100 truncate pr-6 font-display text-lg uppercase tracking-tight">
+                    <h3 className="font-extrabold text-text-primary dark:text-stone-100 truncate pr-4 font-display text-sm sm:text-base uppercase tracking-tight mb-0.5">
                       {item.result.split('\n')[0].replace(/#/g, '').trim() || 'Identificazione'}
                     </h3>
-                    <p className="text-xs text-text-secondary dark:text-stone-400 line-clamp-1 font-bold italic">
+                    <p className="text-[10px] sm:text-xs text-text-secondary dark:text-stone-400 line-clamp-2 font-medium leading-relaxed">
                       {item.result.split('\n').slice(1).join(' ').replace(/[*#]/g, '').trim()}
                     </p>
                   </div>
