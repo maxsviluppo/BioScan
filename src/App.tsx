@@ -166,7 +166,7 @@ export default function App() {
       setIsAnalyzing(true);
       setCurrentImage("https://images.unsplash.com/photo-1518531933037-91b2f5f229cc?auto=format&fit=crop&q=80&w=200");
       try {
-        console.log("Starting search with Gemini 1.5 Flash for:", searchQuery);
+        console.log("Starting search with Gemini 3.1 Pro for:", searchQuery);
         
         const currentKey = (typeof window !== 'undefined' ? localStorage.getItem('CUSTOM_GEMINI_KEY') : '') || import.meta.env.VITE_GEMINI_API_KEY;
         if (!currentKey) {
@@ -174,7 +174,7 @@ export default function App() {
         }
 
         const geminiResponse = await getAiClient().models.generateContent({
-          model: "gemini-1.5-flash",
+          model: "gemini-3.1-pro-preview",
           contents: `Sei un esperto naturalista e botanico/geologo. Fornisci una scheda tecnica ESTREMAMENTE DETTAGLIATA, LUNGA E RICCA DI INFORMAZIONI per l'elemento naturale: "${searchQuery}". Sii molto generoso nelle descrizioni, includendo curiosità, contesto ecologico, origini e particolarità. Non essere breve.
           
           Usa SEMPRE questo formato Markdown pulito:
@@ -235,13 +235,14 @@ export default function App() {
     }
 
     try {
-      console.log("Starting Gemini 1.5 Flash Vision analysis...");
+      // Step 1: Gemini for Vision (using the Flash preview model for quick identification)
+      console.log("Starting Gemini Vision analysis...");
       const geminiResponse = await getAiClient().models.generateContent({
-        model: "gemini-1.5-flash",
+        model: "gemini-3-flash-preview",
         contents: {
           parts: [
             {
-              text: `Sei un esperto naturalista, botanico e geologo. Identifica minuziosamente l'elemento in questa immagine. Fornisci una risposta LUNGA, GENEROSA, E MOLTO DETTAGLIATA per ogni singola sezione. Non essere sbrigativo: esplora caratteristiche, curiosità, storia e biologia in modo approfondito.
+              text: `Sei un esperto naturalista e geologo. Identifica l'elemento in questa immagine.
               
               Rispondi SEMPRE seguendo questo formato Markdown pulito:
               # [CLASSE] Oggetto diagnosticato
@@ -251,7 +252,7 @@ export default function App() {
               **Nome scientifico:** *[Nome Scientifico]*
               
               ### 2. Caratteristiche Visive
-              [Descrizione ampia e generosa in più paragrafi, analizzando ogni dettaglio visibile nell'immagine e tipico della specie]
+              [Descrizione dettagliata in paragrafi]
               
               ### 3. Varianti e Stadi Vitali
               [Descrizione]
@@ -285,7 +286,46 @@ export default function App() {
         }
       });
 
-      const resultText = geminiResponse.text || "Spiacente, non sono riuscito a identificare l'elemento.";
+      const geminiResult = geminiResponse.text || "Spiacente, non sono riuscito a identificare l'elemento.";
+      console.log("Gemini Vision success, enhancing with Gemini 3.1 Pro...");
+      
+      // Step 2: Use Gemini 3.1 Pro for Deep Enhancement (Reasoning & Detail)
+      const enhancedResponse = await getAiClient().models.generateContent({
+        model: "gemini-3.1-pro-preview",
+        contents: `Sei un esperto naturalista. Trasforma i dati di identificazione in una scheda professionale e ordinata seguendo rigorosamente lo schema.
+        
+        Dati identificazione: ${geminiResult}
+        
+        Usa SEMPRE questo formato Markdown pulito:
+        # [CLASSE] Oggetto diagnosticato
+        
+        ### 1. Identificazione
+        **Nome comune:** [Nome]
+        **Nome scientifico:** *[Nome Scientifico]*
+        
+        ### 2. Caratteristiche Visive
+        [Descrizione]
+        
+        ### 3. Varianti e Stadi Vitali
+        [Descrizione]
+        
+        ### 4. Stato di Salute
+        **Diagnosi:** [Stato]
+        [Dettagli]
+        
+        ### 5. Diagnosi Differenziale
+        [Dettagli]
+        
+        ### 6. Cure e Trattamenti
+        *   **Biologiche:** [Consigli]
+        *   **Chimiche:** [Consigli]
+        *   **Meccaniche:** [Consigli]
+        *   **Culturali:** [Consigli]
+        
+        REGOLE: In italiano, professionale, box avviso se pericoloso.`
+      });
+
+      const resultText = enhancedResponse.text || geminiResult;
       console.log("Analysis complete.");
       setAnalysisResult(resultText);
       await saveToHistory(resultText, base64Image);
